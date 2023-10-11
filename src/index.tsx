@@ -20,7 +20,7 @@ function ConverseWithInterpretrer(): [(input: string) => void, Subject<string>, 
   };
 
   if (preferences["openinterpreter-openai-budget"] !== undefined) {
-    env["BUDGET"] = preferences["openinterpreter-openai-budget"].toString();
+    env["MAX_BUDGET"] = preferences["openinterpreter-openai-budget"].toString();
   }
 
   const python_interpreter = spawn(pythonInterpreterPath, [pythonCommandPath], {
@@ -64,7 +64,6 @@ export default function Command() {
   const [loading, setLoading] = useState<boolean>(false);
   const [streamParser, setStreamParser] = useState<StreamParser>();
   const [killFn, setKillFn] = useState<() => void>();
-
   const [searchText, setSearchText] = useState<string>("");
 
   useEffect(() => {

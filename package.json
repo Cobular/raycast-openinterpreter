@@ -1,12 +1,12 @@
 {
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "openinterperter",
-  "title": "OpenInterperter",
-  "description": "Run Open Interpreter from the comfort of Raycast! Enables custom AI code execution locally to accomplish any task you need. ",
+  "title": "Open Interperter - Any Command, On The Spot",
+  "description": "Run Open Interpreter from the comfort of Raycast! Enables custom AI code execution locally to accomplish any task you need.",
   "icon": "command-icon.png",
   "author": "Cobular",
   "categories": [
-    "Applications",
+    "Developer Tools",
     "Productivity",
     "System"
   ],
@@ -14,9 +14,11 @@
   "commands": [
     {
       "name": "index",
-      "title": "Talk to OpenInterpreter",
-      "description": "Template with a plain detail view",
-      "mode": "view"
+      "title": "Run Open Interpreter",
+      "subtitle": "OpenInterpreter",
+      "description": "Starts an open interpreter session",
+      "mode": "view",
+      "icon": "command-icon.png"
     }
   ],
   "dependencies": {
@@ -64,7 +66,7 @@
         },
         {
           "title": "GPT 3.5 16k",
-          "value": "gpt-3.5-16k"
+          "value": "gpt-3.5-turbo-16k"
         }
       ]
     },

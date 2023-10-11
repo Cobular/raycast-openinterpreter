@@ -3,10 +3,11 @@
 import interpreter
 import sys
 import json
+import os
 
-interpreter.model = "gpt-3.5-turbo"
+interpreter.model = os.environ.get("MODEL", "gpt-3.5-turbo")
 interpreter.auto_run = False
-interpreter.max_budget = 1
+interpreter.max_budget = os.environ.get("MAX_BUDGET", 100)
 
 while True:
     command = input() # Get the next command

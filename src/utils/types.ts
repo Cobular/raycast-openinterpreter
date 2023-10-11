@@ -8,5 +8,5 @@ export enum OpenAIModel {
   GPT4 = "gpt-4",
   GPT432K = "gpt-4-32k",
   GPT35Turbo = "gpt-3.5-turbo",
-  GPT3516K = "gpt-3.5-16k",
+  GPT3516K = "gpt-3.5-turbo-16k",
 }
