@@ -1,61 +1,11 @@
-import { Action, ActionPanel, List, clearSearchBar, getPreferenceValues } from "@raycast/api";
-import { spawn, execSync } from "child_process";
-import { join } from "path";
-import { environment } from "@raycast/api";
-import { Subject } from "rxjs";
+import { Action, ActionPanel, List, LocalStorage, Toast, clearSearchBar, showToast } from "@raycast/api";
 import { useEffect, useState } from "react";
-import { StreamParser } from "./utils/python_handlers";
-import { OpenInterpreterPreferences } from "./utils/types";
+import { ConverseWithInterpretrer, StreamParser } from "./utils/python_handlers";
+import { type } from "os";
 
-function ConverseWithInterpretrer(): [(input: string) => void, Subject<string>, () => void] {
-  const pythonInterpreterPath = join(environment.assetsPath, "venv/bin/python");
-  const pythonCommandPath = join(environment.assetsPath, "py-src/main.py");
-  execSync(`chmod +x ${pythonInterpreterPath}`);
-
-  const preferences = getPreferenceValues<OpenInterpreterPreferences>();
-
-  const env: Record<string, string> = {
-    OPENAI_API_KEY: preferences["openinterpreter-openai-api-key"],
-    MODEL: preferences["openinterpreter-openai-model"],
-  };
-
-  if (preferences["openinterpreter-openai-budget"] !== undefined) {
-    env["MAX_BUDGET"] = preferences["openinterpreter-openai-budget"].toString();
-  }
-
-  const python_interpreter = spawn(pythonInterpreterPath, [pythonCommandPath], {
-    env,
-    stdio: "pipe",
-    shell: true,
-  });
-
-  python_interpreter.stdout.setEncoding("utf8");
-  python_interpreter.stderr.setEncoding("utf8");
-
-  const output$ = new Subject<string>();
-
-  python_interpreter.stdout.on("data", (chunk) => {
-    output$.next(chunk.toString());
-  });
-
-  python_interpreter.stderr.on("data", (data) => {
-    console.error(`stderr: ${data}`);
-  });
-
-  python_interpreter.on("close", (code) => {
-    console.log(`child process exited with code ${code}`);
-  });
-
-  const sendInput = (input: string) => {
-    python_interpreter.stdin.write(input + "\n");
-  };
-
-  const kill_fn = () => {
-    console.log("Killing python interpreter");
-    python_interpreter.kill();
-  };
-
-  return [sendInput, output$, kill_fn];
+export interface StorageValue {
+  name: string;
+  long_value: string;
 }
 
 export default function Command() {
@@ -65,6 +15,17 @@ export default function Command() {
   const [streamParser, setStreamParser] = useState<StreamParser>();
   const [killFn, setKillFn] = useState<() => void>();
   const [searchText, setSearchText] = useState<string>("");
+  const [thisQueryName, setThisQueryName] = useState<string | undefined>();
+  const [fullMessage, setFullMessage] = useState<string>("");
+
+  const [savedListItems, setSavedListItems] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    LocalStorage.allItems().then((items) => {
+      console.log(items);
+      setSavedListItems(items);
+    });
+  }, []);
 
   useEffect(() => {
     const [sendInput, output$, kill_fn] = ConverseWithInterpretrer();
@@ -75,7 +36,9 @@ export default function Command() {
       setSearchText("Killed, please try again.");
     });
 
-    const this_stream_parser = new StreamParser(setOutput, setLoading);
+    const this_stream_parser = new StreamParser(setOutput, setLoading, (full_message) => {
+      setFullMessage(full_message);
+    });
     setStreamParser(() => this_stream_parser);
 
     const subscription = output$.subscribe({
@@ -102,25 +65,82 @@ export default function Command() {
         autoFocus
         onAction={() => {
           if (searchText === "") return;
+
+          if (thisQueryName === undefined) {
+            setThisQueryName(searchText);
+          }
           sendInput?.(searchText);
           streamParser?.user_question(searchText);
           clearSearchBar();
         }}
       />
       <Action
-        title="Clear"
-        onAction={() => {
-          clearSearchBar();
+        title="Kill"
+        onAction={async () => {
+          const toast = await showToast({ title: "Killing running process...", style: Toast.Style.Animated })
+          killFn?.();
+          toast.style = Toast.Style.Success;
+          toast.title = "Process Killed Successfully";
         }}
       />
       <Action
-        title="Kill"
+        title="Save Session"
         onAction={() => {
-          killFn?.();
+          LocalStorage.setItem(thisQueryName ?? "default", fullMessage);
+        }}
+      />
+      <Action
+        title="Clear Session History"
+        onAction={() => {
+          LocalStorage.clear();
+          setSavedListItems({});
         }}
       />
     </ActionPanel>
   );
+
+  const past_items = Object.entries(savedListItems).map(([key, value]) => {
+    const stream_parser = new StreamParser(
+      () => {},
+      () => {},
+      () => {}
+    );
+    stream_parser.build_context(value);
+    return (
+      <List.Item
+        title={key}
+        key={key}
+        detail={<List.Item.Detail markdown={stream_parser.getContent()} />}
+        actions={actions}
+      />
+    );
+  });
+
+
+  let rows = [];
+
+  if (thisQueryName !== undefined) {
+    rows.push(
+      <List.Item
+        key={"default"}
+        title={thisQueryName}
+        detail={<List.Item.Detail markdown={output} />}
+        actions={actions}
+      />
+    );
+  } else {
+    rows.push(
+      <List.Item
+        key={"default"}
+        title={"Ask a question"}
+        actions={actions}
+      />
+    );
+  }
+
+  if (past_items.length > 0) {
+    rows.push(...past_items);
+  }
 
   return (
     <List
@@ -132,8 +152,13 @@ export default function Command() {
       }}
       isShowingDetail={true}
       actions={actions}
+      filtering={false}
     >
-      <List.Item title={"Module Response"} detail={<List.Item.Detail markdown={output} />} actions={actions} />
+      {Object.entries(savedListItems).length === 0 && output === "" ? (
+        <List.EmptyView title="Make a request to get started" />
+      ) : (
+        rows
+      )}
     </List>
   );
 }
