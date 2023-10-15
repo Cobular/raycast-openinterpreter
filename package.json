@@ -1,8 +1,8 @@
 {
   "$schema": "https://www.raycast.com/schemas/extension.json",
-  "name": "openinterperter",
-  "title": "Open Interperter - Any Command, On The Spot",
-  "description": "Run Open Interpreter from the comfort of Raycast! Enables custom AI code execution locally to accomplish any task you need.",
+  "name": "openinterpreter",
+  "title": "Open Interpreter - Any Command, On The Spot",
+  "description": "Run Open Interpreter from the comfort of Raycast! Enables AI code execution to do anything you need, on your local machine-.",
   "icon": "command-icon.png",
   "author": "Cobular",
   "categories": [

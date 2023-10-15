@@ -1,8 +1,8 @@
-# OpenInterperter
+# OpenInterpreter
 
 Run Open Interpreter from the comfort of Raycast! The last Raycast command you'll ever need - do anything you can imagine on your computer!
 
-![Screenshot of OpenInterpreter](metadata/openinterperter-1.png)
+![Screenshot of OpenInterpreter](metadata/openinterpreter-1.png)
 
 ## Instalation Instructions
 
@@ -13,7 +13,7 @@ If you want to get it going before then, here are the steps:
 1. Download and setup [Raycast](https://www.raycast.com/)
 2. Make a Raycast Account (required to create an extension)
 3. Search Raycast for "Create Extension"
-4. Call it `openinterperter`
+4. Call it `openinterpreter`
 5. Open the directory it creates and overwrite it with the code of this repo!
 6. `npm i && npm run dev`
 7. It's now there in your Raycast! Once you kill that running command, you'll be good to go. 
