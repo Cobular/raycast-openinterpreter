@@ -1,7 +1,7 @@
 import { environment, getPreferenceValues } from "@raycast/api";
 import { execSync, spawn } from "child_process";
 import { join } from "path";
-import { OpenInterpreterPreferences, assertUnreachable } from "./types";
+import { ModelToEnvVars, OpenInterpreterPreferences, assertUnreachable } from "./types";
 import { Subject } from "rxjs";
 import { writeFileSync } from "fs";
 import { log } from "console";
@@ -225,19 +225,10 @@ export function ConverseWithInterpretrer(): [(input: string) => void, Subject<st
 
   const preferences = getPreferenceValues<OpenInterpreterPreferences>();
 
-  const env: Record<string, string> = {
-    OPENAI_API_KEY: preferences["openinterpreter-openai-api-key"],
-    MODEL: preferences["openinterpreter-openai-model"],
-    // The actual user's home directry 
-    HOME: process.env.HOME || "",
-  };
+  const env = ModelToEnvVars(preferences["openinterpreter-model"], preferences["openinterpreter-api-key"], preferences["openinterpreter-base-url"])
 
-  if (preferences["openinterpreter-openai-budget"] !== undefined) {
-    env["MAX_BUDGET"] = preferences["openinterpreter-openai-budget"].toString();
-  }
-
-  if (preferences["openinterpreter-openai-base-url"]) {
-    env["OPENAI_API_BASE"] = preferences["openinterpreter-openai-base-url"];
+  if (preferences["openinterpreter-budget"] !== undefined) {
+    env["MAX_BUDGET"] = preferences["openinterpreter-budget"].toString();
   }
 
   console.log(env)

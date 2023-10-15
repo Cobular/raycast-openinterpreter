@@ -38,15 +38,15 @@
   },
   "preferences": [
     {
-      "name": "openinterpreter-openai-api-key",
-      "title": "OpenAI API Key",
-      "description": "Your OpenAI API Key",
+      "name": "openinterpreter-api-key",
+      "title": "API Key",
+      "description": "Your API Key for the Company You've Selected",
       "type": "textfield",
       "required": true
     },
     {
-      "title": "OpenAI Model",
-      "name": "openinterpreter-openai-model",
+      "title": "Model",
+      "name": "openinterpreter-model",
       "description": "The model to use for OpenAI",
       "required": true,
       "default": "gpt-4",
@@ -67,24 +67,35 @@
         {
           "title": "GPT 3.5 16k",
           "value": "gpt-3.5-turbo-16k"
+        },
+        {
+          "title": "Claude Instant 1",
+          "value": "claude-instant-1"
+        },
+        {
+          "title": "Claude Instant 1.2",
+          "value": "claude-instant-1.2"
+        },
+        {
+          "title": "Claude Instant 2",
+          "value": "claude-instant-2"
         }
       ]
     },
     {
+      "title": "Base URL",
+      "name": "openinterpreter-base-url",
+      "description": "The base URL variable to inject. Doesn't always do something, depends on the company. Optional.",
+      "required": false,
+      "type": "textfield"
+    },
+    {
       "title": "Budget",
-      "name": "openinterpreter-openai-budget",
+      "name": "openinterpreter-budget",
       "description": "The budget (in USD) of a single session. Optional.",
       "required": false,
       "type": "textfield",
       "placeholder": "1.50"
-    },
-    {
-      "title": "OpenAI Base URL",
-      "name": "openinterpreter-openai-base-url",
-      "description": "The base URL for OpenAI. Optional.",
-      "required": false,
-      "type": "textfield",
-      "placeholder": "https://api.openai.com/v1"
     }
   ],
   "scripts": {
