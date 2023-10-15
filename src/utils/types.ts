@@ -2,6 +2,7 @@ export interface OpenInterpreterPreferences {
   "openinterpreter-openai-api-key": string;
   "openinterpreter-openai-model": OpenAIModel;
   "openinterpreter-openai-budget"?: number;
+  "openinterpreter-openai-base-url"?: string;
 }
 
 export enum OpenAIModel {

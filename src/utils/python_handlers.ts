@@ -3,6 +3,8 @@ import { execSync, spawn } from "child_process";
 import { join } from "path";
 import { OpenInterpreterPreferences, assertUnreachable } from "./types";
 import { Subject } from "rxjs";
+import { writeFileSync } from "fs";
+import { log } from "console";
 
 export interface Language {
   language: string;
@@ -99,6 +101,7 @@ export class StreamParser {
   private activeLine: number | null = null;
   private currentLanguage = "";
   private current_code = "";
+  private current_output: string | undefined = undefined;
   private responseContentHook: (content: string) => void;
   private loadingHook: (loading: boolean) => void;
   private fullMessageHook: (message: string) => void;
@@ -143,7 +146,6 @@ export class StreamParser {
     this.content += "\n * * * \n";
 
     this.responseContentHook(this.getContent());
-    this.loadingHook(true);
   }
 
   update(chunk: ResponseChunk) {
@@ -154,15 +156,20 @@ export class StreamParser {
     } else if (isExecutingChunk(chunk)) {
       this.current_code = chunk.executing.code;
     } else if (isActiveLineChunk(chunk)) {
+      this.loadingHook(true);
       this.activeLine = chunk.active_line;
     } else if (isOutputChunk(chunk)) {
-      this.content += `\n\n\`\`\`${this.currentLanguage}\n${this.current_code}\n\`\`\`\n\n`;
-      this.current_code = "";
-      // Strip any trailing newlines or whitespace from the output
-      chunk.output = chunk.output.replace(/\s*$/, "");
-      this.content += `Result: \`${chunk.output}\`\n\n`;
+      if (this.current_output === undefined) {
+        this.current_output = "";
+      }
+
+      this.current_output += chunk.output;
     } else if (isEndOfExecutionChunk(chunk)) {
       // We clean everything up in the output line;
+      this.content += `\n\n\`\`\`${this.currentLanguage}\n${this.current_code}\n\`\`\`\n\n`;
+      this.content += `*Result:* \n\`\`\`\n${this.current_output}\n\`\`\`\n\n`;
+      this.current_output = undefined;
+      this.current_code = "";
       this.loadingHook(false);
     } else if (isMessageChunk(chunk)) {
       this.content += `${chunk.message}`;
@@ -179,38 +186,63 @@ export class StreamParser {
   }
 
   getContent() {
+    let output = this.content;
+
     if (this.current_code !== "") {
       if (this.activeLine !== null) {
         const lines = this.current_code.split("\n");
         lines[this.activeLine - 1] = `**${lines[this.activeLine - 1]}**`;
-        return this.content + `\n\`\`\`${this.currentLanguage}\n${lines.join("\n")}\n\`\`\``;
+        output += `\n\`\`\`${this.currentLanguage}\n${lines.join("\n")}\n\`\`\``;
+      } else {
+        output += `\n\`\`\`${this.currentLanguage}\n${this.current_code}\n\`\`\``;
       }
-      return this.content + `\n\`\`\`${this.currentLanguage}\n${this.current_code}\n\`\`\``;
-    } else {
-      return this.content;
+    } 
+
+    if (this.current_output !== undefined) {
+      output += `\n*Result:* \n\`\`\`\n${this.current_output}\n\`\`\`\n`;
     }
+
+    return output
   }
 }
 
+function generate_rc_file() {
+  const rcfile_path = join(environment.assetsPath, ".bashrc");
+
+  const rcfile_content = `#!/usr/bin/env bash
+
+echo $HOME
+
+source ${join(environment.assetsPath, "venv/bin/activate")}
+`
+    log(rcfile_path)
+    writeFileSync(rcfile_path, rcfile_content);
+}
+
 export function ConverseWithInterpretrer(): [(input: string) => void, Subject<string>, () => void] {
-  const pythonInterpreterPath = join(environment.assetsPath, "venv/bin/python");
   const pythonCommandPath = join(environment.assetsPath, "py-src/main.py");
-  execSync(`chmod +x ${pythonInterpreterPath}`);
+  generate_rc_file();
 
   const preferences = getPreferenceValues<OpenInterpreterPreferences>();
 
   const env: Record<string, string> = {
     OPENAI_API_KEY: preferences["openinterpreter-openai-api-key"],
     MODEL: preferences["openinterpreter-openai-model"],
+    // The actual user's home directry 
+    HOME: process.env.HOME || "",
   };
 
   if (preferences["openinterpreter-openai-budget"] !== undefined) {
     env["MAX_BUDGET"] = preferences["openinterpreter-openai-budget"].toString();
   }
 
-  console.log(pythonInterpreterPath, pythonCommandPath);
+  if (preferences["openinterpreter-openai-base-url"]) {
+    env["OPENAI_API_BASE"] = preferences["openinterpreter-openai-base-url"];
+  }
 
-  const python_interpreter = spawn(pythonInterpreterPath, [pythonCommandPath], {
+  console.log(env)
+
+  const python_interpreter = spawn("bash", ["-c", `". ${join(environment.assetsPath, ".bashrc")} && python ${pythonCommandPath}"`], {
     env,
     stdio: "pipe",
     shell: true,

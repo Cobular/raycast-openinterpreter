@@ -1,7 +1,7 @@
 import { Action, ActionPanel, List, LocalStorage, Toast, clearSearchBar, showToast } from "@raycast/api";
 import { useEffect, useState } from "react";
 import { ConverseWithInterpretrer, StreamParser } from "./utils/python_handlers";
-import { type } from "os";
+import { useDebouncedState } from "./utils/utils";
 
 export interface StorageValue {
   name: string;
@@ -10,7 +10,7 @@ export interface StorageValue {
 
 export default function Command() {
   const [sendInput, setSendInput] = useState<(input: string) => void>();
-  const [output, setOutput] = useState<string>("");
+  const [output, setOutput] = useDebouncedState<string>("", 500);
   const [loading, setLoading] = useState<boolean>(false);
   const [streamParser, setStreamParser] = useState<StreamParser>();
   const [killFn, setKillFn] = useState<() => void>();
@@ -43,11 +43,15 @@ export default function Command() {
 
     const subscription = output$.subscribe({
       next: (data) => {
-        console.log(data);
-        data
-          .split("\n")
-          .filter((line) => line !== "")
-          .forEach((line) => this_stream_parser.update(JSON.parse(line)));
+        try {
+          data
+            .split("\n")
+            .filter((line) => line !== "")
+            .forEach((line) => this_stream_parser.update(JSON.parse(line)));
+        } catch (e) {
+          console.error(`Got garbage from the sub-process: ${e} \n ${data}`)
+        }
+        
       },
       error: (err) => console.error(`Something went wrong: ${err}`),
     });

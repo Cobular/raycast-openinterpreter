@@ -77,6 +77,14 @@
       "required": false,
       "type": "textfield",
       "placeholder": "1.50"
+    },
+    {
+      "title": "OpenAI Base URL",
+      "name": "openinterpreter-openai-base-url",
+      "description": "The base URL for OpenAI. Optional.",
+      "required": false,
+      "type": "textfield",
+      "placeholder": "https://api.openai.com/v1"
     }
   ],
   "scripts": {
