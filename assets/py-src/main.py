@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 
+from doctest import debug
 import interpreter
 import sys
 import json
 import os
+
+
+print(sys.executable, flush=True, file=sys.stderr)
 
 interpreter.model = os.environ.get("MODEL", "gpt-3.5-turbo")
 interpreter.auto_run = False

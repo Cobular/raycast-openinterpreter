@@ -213,7 +213,11 @@ function generate_rc_file() {
 
 echo $HOME
 
+echo "Activating virtual environment"
+
 source ${join(environment.assetsPath, "venv/bin/activate")}
+
+which python
 `
     log(rcfile_path)
     writeFileSync(rcfile_path, rcfile_content);
