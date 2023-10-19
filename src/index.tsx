@@ -121,7 +121,7 @@ export default function Command() {
   });
 
 
-  let rows = [];
+  const rows = [];
 
   if (thisQueryName !== undefined) {
     rows.push(

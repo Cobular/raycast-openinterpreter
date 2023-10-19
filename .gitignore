@@ -9,3 +9,6 @@ raycast-env.d.ts
 # misc
 .DS_Store
 __pycache__
+venv
+dist
+build

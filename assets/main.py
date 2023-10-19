@@ -1,11 +1,8 @@
-#!/usr/bin/env python3
-
-from doctest import debug
+import requests
 import interpreter
 import sys
 import json
 import os
-
 
 print(sys.executable, flush=True, file=sys.stderr)
 
