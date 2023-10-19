@@ -103,6 +103,7 @@
     "dev": "ray develop",
     "fix-lint": "ray lint --fix",
     "lint": "ray lint",
-    "publish": "npx @raycast/api@latest publish"
+    "publish": "npx @raycast/api@latest publish",
+    "build:py": ". ./venv/bin/activate && pyinstaller --distpath assets ./py_src/main.spec"
   }
 }

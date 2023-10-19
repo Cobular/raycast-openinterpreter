@@ -1,3 +1,0 @@
-hiddenimports = [
-    "interpreter.core.core.*"
-]

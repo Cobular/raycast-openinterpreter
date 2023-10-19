@@ -49,6 +49,22 @@ export interface FullMessagesChunk {
   messages: string;
 }
 
+export interface StartOfMessageChunk {
+  start_of_message: boolean;
+}
+
+export interface EndOfExecutionChunk {
+  end_of_message: boolean;
+}
+
+export interface StartofCodeChunk {
+  start_of_code: boolean;
+}
+
+export interface EndOfCodeChunk {
+  end_of_code: boolean;
+}
+
 type ResponseChunk =
   | LanguageChunk
   | CodeChunk
@@ -58,7 +74,11 @@ type ResponseChunk =
   | EndOfExecutionChunk
   | MessageChunk
   | FinishedChunk
-  | FullMessagesChunk;
+  | FullMessagesChunk
+  | StartOfMessageChunk
+  | EndOfExecutionChunk
+  | StartofCodeChunk
+  | EndOfCodeChunk;
 
 export function isLanguageChunk(chunk: ResponseChunk): chunk is LanguageChunk {
   return (chunk as LanguageChunk).language !== undefined;
@@ -94,6 +114,22 @@ export function isFinishedChunk(chunk: ResponseChunk): chunk is FinishedChunk {
 
 export function isFullMessagesChunk(chunk: ResponseChunk): chunk is FullMessagesChunk {
   return (chunk as FullMessagesChunk).messages !== undefined;
+}
+
+export function isStartOfMessageChunk(chunk: ResponseChunk): chunk is StartOfMessageChunk {
+  return (chunk as StartOfMessageChunk).start_of_message !== undefined;
+}
+
+export function isEndOfMessageChunk(chunk: ResponseChunk): chunk is EndOfExecutionChunk {
+  return (chunk as EndOfExecutionChunk).end_of_message !== undefined;
+}
+
+export function isStartofCodeChunk(chunk: ResponseChunk): chunk is StartofCodeChunk {
+  return (chunk as StartofCodeChunk).start_of_code !== undefined;
+}
+
+export function isEndOfCodeChunk(chunk: ResponseChunk): chunk is EndOfCodeChunk {
+  return (chunk as EndOfCodeChunk).end_of_code !== undefined;
 }
 
 export class StreamParser {
@@ -156,13 +192,11 @@ export class StreamParser {
     } else if (isExecutingChunk(chunk)) {
       this.current_code = chunk.executing.code;
     } else if (isActiveLineChunk(chunk)) {
-      this.loadingHook(true);
       this.activeLine = chunk.active_line;
     } else if (isOutputChunk(chunk)) {
       if (this.current_output === undefined) {
         this.current_output = "";
       }
-
       this.current_output += chunk.output;
     } else if (isEndOfExecutionChunk(chunk)) {
       // We clean everything up in the output line;
@@ -170,13 +204,22 @@ export class StreamParser {
       this.content += `*Result:* \n\`\`\`\n${this.current_output}\n\`\`\`\n\n`;
       this.current_output = undefined;
       this.current_code = "";
-      this.loadingHook(false);
     } else if (isMessageChunk(chunk)) {
       this.content += `${chunk.message}`;
     } else if (isFinishedChunk(chunk)) {
-      this.loadingHook(false);
+      void 0;
     } else if (isFullMessagesChunk(chunk)) {
       this.fullMessageHook(chunk.messages);
+    } else if (isStartOfMessageChunk(chunk)) {
+      this.loadingHook(true);
+    } else if (isEndOfMessageChunk(chunk)) {
+      this.loadingHook(false);
+    } else if (isStartofCodeChunk(chunk)) {
+      this.content += "\n\n";
+      this.current_code = "";
+    } else if (isEndOfCodeChunk(chunk)) {
+      this.content += `\n\n\`\`\`${this.currentLanguage}\n${this.current_code}\n\`\`\`\n\n`;
+      this.current_code = "";
     } else {
       // If anything in this line is showing a typeerror, it's because we forgot to add a type guard
       return assertUnreachable(chunk);
@@ -210,15 +253,6 @@ function generate_rc_file() {
   const rcfile_path = join(environment.assetsPath, ".bashrc");
 
   const rcfile_content = `#!/usr/bin/env bash
-
-echo $HOME
-
-echo "Activating virtual environment"
-
-source ${join(environment.assetsPath, "venv/bin/activate")}
-
-pwd
-
 which python
 `
     log(rcfile_path)
@@ -226,7 +260,7 @@ which python
 }
 
 export function ConverseWithInterpretrer(): [(input: string) => void, Subject<string>, () => void] {
-  const pythonCommandPath = join(environment.assetsPath, "py-src/main.py");
+  const pythonCommandPath = join(environment.assetsPath, "main");
   generate_rc_file();
 
   const preferences = getPreferenceValues<OpenInterpreterPreferences>();
@@ -237,9 +271,14 @@ export function ConverseWithInterpretrer(): [(input: string) => void, Subject<st
     env["MAX_BUDGET"] = preferences["openinterpreter-budget"].toString();
   }
 
+  env["PYTHONEXECUTABLE"] = "python3"
+  env["HOME"] = process.env.HOME || ""
+
   console.log(env)
 
-  const python_interpreter = spawn("bash", ["-c", `". ${join(environment.assetsPath, ".bashrc")} && python ${pythonCommandPath}"`], {
+  execSync(`chmod +x "${pythonCommandPath}"`)
+
+  const python_interpreter = spawn("bash", ["-c", `"${pythonCommandPath}"`], {
     env,
     stdio: "pipe",
     shell: true,

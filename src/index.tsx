@@ -10,7 +10,7 @@ export interface StorageValue {
 
 export default function Command() {
   const [sendInput, setSendInput] = useState<(input: string) => void>();
-  const [output, setOutput] = useDebouncedState<string>("", 500);
+  const [output, setOutput] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [streamParser, setStreamParser] = useState<StreamParser>();
   const [killFn, setKillFn] = useState<() => void>();
@@ -47,7 +47,7 @@ export default function Command() {
           data
             .split("\n")
             .filter((line) => line !== "")
-            .forEach((line) => this_stream_parser.update(JSON.parse(line)));
+            .forEach((line) => this_stream_parser.update(JSON.parse(line.trim())));
         } catch (e) {
           console.error(`Got garbage from the sub-process: ${e} \n ${data}`)
         }
