@@ -1,6 +1,4 @@
-import { runAppleScript } from "@raycast/utils";
 import { useState, useEffect } from "react";
-import { END, PAGE_DOWN } from "./apple_script";
 
 function getRandomInteger(min: number, max: number): number {
   min = Math.ceil(min);

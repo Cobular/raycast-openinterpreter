@@ -69,7 +69,6 @@ export function ModelToEnvVars(model: Model, apiKey: string, baseUrl?: string): 
   }
 }
 
-
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function assertUnreachable(_: never): never {
   throw new Error("Didn't expect to get here");

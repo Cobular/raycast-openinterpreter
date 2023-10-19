@@ -132,6 +132,18 @@ export function isEndOfCodeChunk(chunk: ResponseChunk): chunk is EndOfCodeChunk 
   return (chunk as EndOfCodeChunk).end_of_code !== undefined;
 }
 
+export interface ContextItem {
+  role: string;
+  message: string;
+  language?: string;
+  code?: string;
+  output?: string;
+}
+
+export function isContextItem(item: unknown): item is ContextItem {
+  return (item as ContextItem).role !== undefined;
+}
+
 export class StreamParser {
   private content = "";
   private activeLine: number | null = null;
@@ -143,16 +155,25 @@ export class StreamParser {
   private fullMessageHook: (message: string) => void;
 
   // Constructor that takes a hook to call with updated content
-  constructor(responseContentHoook: (content: string) => void, loadingHook: (loading: boolean) => void, fullMessageHook: (message: string) => void) {
-    this.responseContentHook = responseContentHoook;
-    this.loadingHook = loadingHook;
-    this.fullMessageHook = fullMessageHook;
+  constructor(
+    responseContentHoook?: (content: string) => void,
+    loadingHook?: (loading: boolean) => void,
+    fullMessageHook?: (message: string) => void
+  ) {
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    this.responseContentHook = responseContentHoook ?? (() => {});
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    this.loadingHook = loadingHook ?? (() => {});
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    this.fullMessageHook = fullMessageHook ?? (() => {});
   }
 
   build_context(jsonString: string) {
     const contextArray = JSON.parse(jsonString);
-  
-    contextArray.forEach((contextItem: any) => {
+
+    contextArray.forEach((contextItem: unknown) => {
+      if (!isContextItem(contextItem)) throw new Error("Context item is not a context item");
+
       if (contextItem.role === "user") {
         this.user_question(contextItem.message);
       } else if (contextItem.role === "assistant") {
@@ -239,13 +260,13 @@ export class StreamParser {
       } else {
         output += `\n\`\`\`${this.currentLanguage}\n${this.current_code}\n\`\`\``;
       }
-    } 
+    }
 
     if (this.current_output !== undefined) {
       output += `\n*Result:* \n\`\`\`\n${this.current_output}\n\`\`\`\n`;
     }
 
-    return output
+    return output;
   }
 }
 
@@ -254,9 +275,9 @@ function generate_rc_file() {
 
   const rcfile_content = `#!/usr/bin/env bash
 which python
-`
-    log(rcfile_path)
-    writeFileSync(rcfile_path, rcfile_content);
+`;
+  log(rcfile_path);
+  writeFileSync(rcfile_path, rcfile_content);
 }
 
 export function ConverseWithInterpretrer(): [(input: string) => void, Subject<string>, () => void] {
@@ -265,24 +286,28 @@ export function ConverseWithInterpretrer(): [(input: string) => void, Subject<st
 
   const preferences = getPreferenceValues<OpenInterpreterPreferences>();
 
-  const env = ModelToEnvVars(preferences["openinterpreter-model"], preferences["openinterpreter-api-key"], preferences["openinterpreter-base-url"])
+  const env = ModelToEnvVars(
+    preferences["openinterpreter-model"],
+    preferences["openinterpreter-api-key"],
+    preferences["openinterpreter-base-url"]
+  );
 
   if (preferences["openinterpreter-budget"] !== undefined) {
     env["MAX_BUDGET"] = preferences["openinterpreter-budget"].toString();
   }
 
-  env["PYTHONEXECUTABLE"] = "python3"
-  env["HOME"] = process.env.HOME || ""
+  env["PYTHONEXECUTABLE"] = "python3";
+  env["HOME"] = process.env.HOME || "";
 
-  console.log(env)
+  console.log(env);
 
-  execSync(`chmod +x "${pythonCommandPath}"`)
+  execSync(`chmod +x "${pythonCommandPath}"`);
 
   const python_interpreter = spawn("bash", ["-c", `"${pythonCommandPath}"`], {
     env,
     stdio: "pipe",
     shell: true,
-    cwd: environment.assetsPath
+    cwd: environment.assetsPath,
   });
 
   python_interpreter.stdout.setEncoding("utf8");

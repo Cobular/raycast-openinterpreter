@@ -1,7 +1,6 @@
 import { Action, ActionPanel, List, LocalStorage, Toast, clearSearchBar, showToast } from "@raycast/api";
 import { useEffect, useState } from "react";
 import { ConverseWithInterpretrer, StreamParser } from "./utils/python_handlers";
-import { useDebouncedState } from "./utils/utils";
 
 export interface StorageValue {
   name: string;
@@ -49,9 +48,8 @@ export default function Command() {
             .filter((line) => line !== "")
             .forEach((line) => this_stream_parser.update(JSON.parse(line.trim())));
         } catch (e) {
-          console.error(`Got garbage from the sub-process: ${e} \n ${data}`)
+          console.error(`Got garbage from the sub-process: ${e} \n ${data}`);
         }
-        
       },
       error: (err) => console.error(`Something went wrong: ${err}`),
     });
@@ -81,7 +79,7 @@ export default function Command() {
       <Action
         title="Kill"
         onAction={async () => {
-          const toast = await showToast({ title: "Killing running process...", style: Toast.Style.Animated })
+          const toast = await showToast({ title: "Killing running process...", style: Toast.Style.Animated });
           killFn?.();
           toast.style = Toast.Style.Success;
           toast.title = "Process Killed Successfully";
@@ -104,11 +102,7 @@ export default function Command() {
   );
 
   const past_items = Object.entries(savedListItems).map(([key, value]) => {
-    const stream_parser = new StreamParser(
-      () => {},
-      () => {},
-      () => {}
-    );
+    const stream_parser = new StreamParser();
     stream_parser.build_context(value);
     return (
       <List.Item
@@ -119,7 +113,6 @@ export default function Command() {
       />
     );
   });
-
 
   const rows = [];
 
@@ -133,13 +126,7 @@ export default function Command() {
       />
     );
   } else {
-    rows.push(
-      <List.Item
-        key={"default"}
-        title={"Ask a question"}
-        actions={actions}
-      />
-    );
+    rows.push(<List.Item key={"default"} title={"Ask a question"} actions={actions} />);
   }
 
   if (past_items.length > 0) {
