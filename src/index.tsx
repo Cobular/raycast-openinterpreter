@@ -62,7 +62,7 @@ export default function Command() {
 
   const actions = (
     <ActionPanel title="Actions">
-      <Action
+      {!loading ? <Action
         title="Send"
         autoFocus
         onAction={() => {
@@ -71,11 +71,12 @@ export default function Command() {
           if (thisQueryName === undefined) {
             setThisQueryName(searchText);
           }
+          setLoading(true);
           sendInput?.(searchText);
           streamParser?.user_question(searchText);
           clearSearchBar();
         }}
-      />
+      /> : null}
       <Action
         title="Kill"
         onAction={async () => {

@@ -206,12 +206,13 @@ export class StreamParser {
   }
 
   update(chunk: ResponseChunk) {
+    console.log(chunk)
     if (isLanguageChunk(chunk)) {
       this.currentLanguage = chunk.language;
     } else if (isCodeChunk(chunk)) {
       this.current_code += chunk.code;
     } else if (isExecutingChunk(chunk)) {
-      this.current_code = chunk.executing.code;
+      // this.current_code = chunk.executing.code;
     } else if (isActiveLineChunk(chunk)) {
       this.activeLine = chunk.active_line;
     } else if (isOutputChunk(chunk)) {
@@ -221,10 +222,8 @@ export class StreamParser {
       this.current_output += chunk.output;
     } else if (isEndOfExecutionChunk(chunk)) {
       // We clean everything up in the output line;
-      this.content += `\n\n\`\`\`${this.currentLanguage}\n${this.current_code}\n\`\`\`\n\n`;
-      this.content += `*Result:* \n\`\`\`\n${this.current_output}\n\`\`\`\n\n`;
+      this.content += `*Result:* \n\`\`\`\n${ensure_newline(this.current_output)}\`\`\`\n\n`;
       this.current_output = undefined;
-      this.current_code = "";
     } else if (isMessageChunk(chunk)) {
       this.content += `${chunk.message}`;
     } else if (isFinishedChunk(chunk)) {
@@ -236,10 +235,9 @@ export class StreamParser {
     } else if (isEndOfMessageChunk(chunk)) {
       this.loadingHook(false);
     } else if (isStartofCodeChunk(chunk)) {
-      this.content += "\n\n";
       this.current_code = "";
     } else if (isEndOfCodeChunk(chunk)) {
-      this.content += `\n\n\`\`\`${this.currentLanguage}\n${this.current_code}\n\`\`\`\n\n`;
+      this.content += `\n\n\`\`\`${this.currentLanguage}\n${ensure_newline(this.current_code)}\`\`\`\n\n`;
       this.current_code = "";
     } else {
       // If anything in this line is showing a typeerror, it's because we forgot to add a type guard
@@ -258,16 +256,27 @@ export class StreamParser {
         lines[this.activeLine - 1] = `**${lines[this.activeLine - 1]}**`;
         output += `\n\`\`\`${this.currentLanguage}\n${lines.join("\n")}\n\`\`\``;
       } else {
-        output += `\n\`\`\`${this.currentLanguage}\n${this.current_code}\n\`\`\``;
+        output += `\n\`\`\`${this.currentLanguage}\n${ensure_newline(this.current_code)}\`\`\``;
       }
     }
 
     if (this.current_output !== undefined) {
-      output += `\n*Result:* \n\`\`\`\n${this.current_output}\n\`\`\`\n`;
+      output += `\n*Result:* \n\`\`\`\n${ensure_newline(this.current_output)}\`\`\`\n`;
     }
 
     return output;
   }
+}
+
+function ensure_newline(message: string | undefined): string {
+  if (message === undefined) {
+    return "\n";
+  }
+
+  if (message.endsWith("\n")) {
+    return message;
+  }
+  return message + "\n";
 }
 
 function generate_rc_file() {
@@ -298,6 +307,7 @@ export function ConverseWithInterpretrer(): [(input: string) => void, Subject<st
 
   env["PYTHONEXECUTABLE"] = "python3";
   env["HOME"] = process.env.HOME || "";
+  // env["DEBUG_MODE"] = "True";
 
   console.log(env);
 
