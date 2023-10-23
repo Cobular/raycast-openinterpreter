@@ -206,7 +206,7 @@ export class StreamParser {
   }
 
   update(chunk: ResponseChunk) {
-    console.log(chunk)
+    console.log(chunk);
     if (isLanguageChunk(chunk)) {
       this.currentLanguage = chunk.language;
     } else if (isCodeChunk(chunk)) {

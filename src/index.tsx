@@ -62,21 +62,23 @@ export default function Command() {
 
   const actions = (
     <ActionPanel title="Actions">
-      {!loading ? <Action
-        title="Send"
-        autoFocus
-        onAction={() => {
-          if (searchText === "") return;
+      {!loading ? (
+        <Action
+          title="Send"
+          autoFocus
+          onAction={() => {
+            if (searchText === "") return;
 
-          if (thisQueryName === undefined) {
-            setThisQueryName(searchText);
-          }
-          setLoading(true);
-          sendInput?.(searchText);
-          streamParser?.user_question(searchText);
-          clearSearchBar();
-        }}
-      /> : null}
+            if (thisQueryName === undefined) {
+              setThisQueryName(searchText);
+            }
+            setLoading(true);
+            sendInput?.(searchText);
+            streamParser?.user_question(searchText);
+            clearSearchBar();
+          }}
+        />
+      ) : null}
       <Action
         title="Kill"
         onAction={async () => {
