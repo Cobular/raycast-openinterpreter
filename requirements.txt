@@ -55,7 +55,7 @@ multidict==6.0.4
 numpy==1.26.1
 onnxruntime==1.16.1
 ooba==0.0.21
--e git+ssh://git@github.com/Cobular/open-interpreter.git@ef9cf62ddd3fea7f6d60c70accfa2b396568598d#egg=open_interpreter
+-e ./deps/open-interpreter
 openai==0.28.1
 overrides==7.4.0
 packaging==23.2
